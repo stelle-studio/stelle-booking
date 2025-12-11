@@ -205,63 +205,58 @@
         }
 
         function submitBooking() {
-            const name = inputName.value.trim();
+            const name = document.getElementById('inputName').value.trim();
             const phone = document.getElementById('inputPhone').value.trim();
             const service = document.getElementById('serviceSelect').value;
             const date = document.getElementById('inputDate').value;
-            const userId = hiddenUserId.value; // 取得隱藏的 UserID
+            const userId = document.getElementById('hiddenUserId').value; // 記得檢查 HTML 有沒有這個 hidden input
 
+            // 確保有 UserID (如果是測試模式可能沒有)
             if (!name || !phone || !date) {
                 alert("請完整填寫姓名、電話與期望預約時間喔！");
                 return;
             }
-
-            // 鎖定按鈕避免重複發送
+            
+            // 鎖定按鈕
+            const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 資料傳送中...';
 
-            // --- 關鍵區塊：資料傳送 ---
-            // 這裡還缺一個步驟：你需要建立一個 Google Apps Script (GAS)
-            // 然後把那個 GAS 的網址填入下方的 fetch URL
-            
-            // 模擬傳送成功 (真實情況要用 fetch)
-            setTimeout(() => {
-                console.log("資料已打包，準備發送:", { userId, name, phone, service, date });
-                
-                // 更新模態框內容
-                modalName.innerText = name;
-                modalPhone.innerText = phone;
-                modalServiceName.innerText = service;
-                modalDate.innerText = date.replace('T', ' ');
+            // ★★★ 請將這裡換成妳剛剛部署 GAS 拿到的網址 ★★★
+            const GAS_URL = 'https://script.google.com/macros/s/AKfycbxQYTqYjXEz1LcG4n8dPTInckOTSl-Ty0CNAk8qGyufcVHiCz_Zt74xBbCEDFr0XRyMvg/exe'; 
 
-                customModal.classList.remove('hidden');
+            // 使用 fetch 發送資料
+            // mode: 'no-cors' 是關鍵，因為 GAS 不會回傳標準 CORS header
+            fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    userId: userId,
+                    name: name,
+                    phone: phone,
+                    service: service,
+                    date: date
+                }),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                mode: 'no-cors' 
+            })
+            .then(() => {
+                // 成功後顯示模態框 (因為 no-cors 模式無法讀取回傳值，我們假設發送即成功)
+                document.getElementById('modalName').innerText = name;
+                document.getElementById('modalPhone').innerText = phone;
+                document.getElementById('modalServiceName').innerText = service;
+                document.getElementById('modalDate').innerText = date.replace('T', ' ');
+                
+                document.getElementById('customModal').classList.remove('hidden');
                 
                 // 按鈕復原
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> 送出預約';
-            }, 1000);
-
-            /* // **未來接上 Google Sheet 的程式碼範本**：
-            const GAS_URL = '你的_GOOGLE_APPS_SCRIPT_網址'; 
-            
-            fetch(GAS_URL, {
-                method: 'POST',
-                body: JSON.stringify({ userId, name, phone, service, date }),
-                // ... 其他 header 設定
             })
-            .then(res => res.text())
-            .then(response => {
-                // 成功後顯示模態框
+            .catch(error => {
+                alert("發生錯誤，請稍後再試：" + error);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '重新送出';
             });
-            */
-        }
-
-        function closeModal() {
-            customModal.classList.add('hidden');
-            // 嘗試關閉視窗
-            if (liff.isInClient()) {
-                liff.closeWindow();
-            }
         }
     </script>
 </body>
