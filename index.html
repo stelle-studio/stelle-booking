@@ -320,7 +320,8 @@
                 </div>
             </div>
 
-            <button onclick="switchToEditMode()" class="btn-submit">修改預約時段</button>
+            <!-- ★★★ 新增 ID 方便控制顯示/隱藏 ★★★ -->
+            <button id="btn-modify-booking" onclick="switchToEditMode()" class="btn-submit">修改預約時段</button>
             <button onclick="liff.closeWindow()" class="btn-submit btn-outline">關閉視窗</button>
         </div>
     </div>
@@ -341,7 +342,7 @@
 
     <script>
         const YOUR_LIFF_ID = '2008676848-7eEjQ8U9'; 
-        // ★★★ 請務必在此處填入您「重新部署」後取得的最新 Apps Script 網址 ★★★
+        // ★★★ 請務必確認這裡的網址是您最新的 Apps Script 部署網址 ★★★
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzFZMsvRXC1Muvh6J2vcOTErZPpYPJgTezDEoeDPUDf1bQQgVkzbdJPNQ_Pe9PXEdSRQA/exec'; 
 
         function initTimeSlots() {
@@ -362,7 +363,8 @@
                 name: params.get('name'),
                 service: params.get('service'),
                 time: params.get('time'),
-                phone: params.get('phone') 
+                phone: params.get('phone'),
+                status: params.get('status') // ★★★ 新增：讀取狀態參數 ★★★
             };
         }
 
@@ -420,7 +422,15 @@
                     document.getElementById('viewService').innerText = currentParams.service || "未指定";
                     document.getElementById('viewTime').innerText = currentParams.time || "未指定";
 
-                    // ★★★ 在背景先將表單填好，以免切換過去是空白 ★★★
+                    // ★★★ 若狀態為 SUCCESS (預約成功)，則隱藏修改按鈕 ★★★
+                    if (currentParams.status === 'SUCCESS') {
+                        document.getElementById('btn-modify-booking').style.display = 'none';
+                    } else {
+                        // 確保其他狀態 (PENDING, CANCELLED) 是顯示的
+                        document.getElementById('btn-modify-booking').style.display = 'inline-block';
+                    }
+
+                    // 在背景先將表單填好，以免切換過去是空白
                     document.getElementById('inputName').value = currentParams.name || profile.displayName;
                     if(currentParams.service) document.getElementById('inputService').value = currentParams.service;
                     if(currentParams.phone) document.getElementById('inputPhone').value = currentParams.phone; // 填入電話
