@@ -365,8 +365,8 @@
         
         const YOUR_LIFF_ID = '2008676848-7eEjQ8U9'; 
         
-        // ★★★ 已自動保留您的 Google Script URL ★★★
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxQYTqYjXEz1LcG4n8dPTInckOTSl-Ty0CNAk8qGyufcVHiCz_Zt74xBbCEDFr0XRyMvg/exec'; 
+        // ★★★ 請確認這一步網址是否為最新部署的版本 ★★★
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzMQ2MC1iajVfAiVHNp3OSVlwKz5FUztgvZt1pSlKOZikVUmZcD4_i6JWIAX-sR0CzMcg/exec'; 
 
         // 初始化時間選單 (10:00 - 20:00)
         function initTimeSlots() {
@@ -473,22 +473,25 @@
                 time: time,
                 userId: userId
             };
+            
+            console.log("Preparing to send data to:", GOOGLE_SCRIPT_URL);
+            console.log("Data:", data);
 
-            // 1. 發送至 Google Sheet (修正後的邏輯)
-            // 只要網址存在且是 Google Script 開頭，就執行發送
+            // 1. 發送至 Google Sheet
+            // ★★★ 重要：權限必須是「任何人 (Anyone)」 ★★★
             if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.startsWith('https://script.google.com')) {
                 fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     body: JSON.stringify(data),
-                    mode: 'no-cors', 
-                    headers: { 'Content-Type': 'application/json' }
+                    mode: 'no-cors', // 繞過 CORS 限制
+                    headers: { 'Content-Type': 'text/plain' } // 使用 text/plain 避免 preflight 檢查
                 }).then(() => {
-                    console.log('Google Sheet Sent');
+                    console.log('Request sent to Google Sheet (no-cors mode)');
                 }).catch(err => {
                     console.error('Google Sheet Error:', err);
                 });
             } else {
-                console.warn('Google Script URL 未設定，跳過表單寫入');
+                console.warn('Google Script URL 未設定或格式錯誤');
             }
 
             // 2. 嘗試發送 LINE 訊息 (給用戶自己看)
