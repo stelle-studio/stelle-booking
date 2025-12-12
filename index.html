@@ -74,8 +74,8 @@
             text-align: center;
         }
 
-        /* --- 用戶資料區域 --- */
-        #booking-form-section {
+        /* --- 共用顯示控制 --- */
+        .section-block {
             display: none; 
             width: 100%;
             text-align: center;
@@ -177,6 +177,16 @@
         .btn-submit:hover {
             background-color: var(--accent-bar);
         }
+        
+        .btn-outline {
+            background-color: transparent;
+            color: var(--primary-brown);
+            border: 1px solid var(--primary-brown);
+            margin-top: 10px;
+        }
+        .btn-outline:hover {
+            background-color: #FDF3F0;
+        }
 
         .btn-submit:disabled {
             background-color: #ccc;
@@ -190,86 +200,33 @@
             word-break: break-all;
         }
 
-        /* --- 客製化 Modal (彈窗) 樣式 --- */
-        .modal-overlay {
-            display: none; /* 預設隱藏 */
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            animation: fadeIn 0.3s;
-        }
-
-        .custom-modal {
-            background: #fff;
-            width: 85%;
-            max-width: 360px;
-            padding: 30px 25px;
-            border-radius: 16px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            position: relative;
-        }
-
-        .modal-title {
-            font-size: 18px;
-            color: var(--primary-brown);
-            font-weight: 600;
+        /* --- 詳情卡片樣式 (新功能) --- */
+        .details-card {
+            background: #FAFAFA;
+            border-radius: 12px;
+            padding: 20px;
             margin-bottom: 20px;
-            line-height: 1.5;
-        }
-
-        .modal-content-list {
             text-align: left;
-            background: var(--bg-color);
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 14px;
-            color: var(--text-dark);
-            margin-bottom: 25px;
+            border: 1px solid #EFEFEF;
         }
-
-        .modal-content-list p {
-            margin: 8px 0;
+        .details-row {
             display: flex;
             justify-content: space-between;
+            margin-bottom: 12px;
+            border-bottom: 1px dashed #E0E0E0;
+            padding-bottom: 8px;
         }
+        .details-row:last-child {
+            border-bottom: none;
+        }
+        .d-label { color: var(--text-light); font-size: 14px; }
+        .d-value { color: var(--text-dark); font-weight: 600; font-size: 15px; }
 
-        .modal-content-list span.label {
-            color: var(--text-light);
-            font-weight: 500;
-        }
-        
-        .modal-content-list span.value {
-            font-weight: 600;
-        }
-
-        .btn-modal-close {
-            background-color: var(--primary-brown);
-            color: white;
-            border: none;
-            padding: 12px 0;
-            width: 100%;
-            border-radius: 6px;
-            font-size: 15px;
-            cursor: pointer;
-        }
-
-        /* --- 新增提醒文字樣式 --- */
-        .reminder-text {
-            font-size: 13px;
-            color: var(--primary-brown);
-            margin-top: 12px;
-            margin-bottom: 5px;
-            font-weight: 500;
-            letter-spacing: 0.5px;
-            line-height: 1.5;
-        }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; animation: fadeIn 0.3s; }
+        .custom-modal { background: #fff; width: 85%; max-width: 360px; padding: 30px 25px; border-radius: 16px; text-align: center; }
+        .modal-title { font-size: 18px; color: var(--primary-brown); font-weight: 600; margin-bottom: 20px; }
+        .btn-modal-close { background-color: var(--primary-brown); color: white; border: none; padding: 12px 0; width: 100%; border-radius: 6px; cursor: pointer; }
+        .reminder-text { font-size: 13px; color: var(--primary-brown); margin-top: 12px; margin-bottom: 5px; font-weight: 500; }
 
     </style>
 </head>
@@ -283,16 +240,13 @@
         <!-- Loading State -->
         <div id="loading-status">LINE 系統連線中...</div>
 
-        <!-- Main Form Section -->
-        <div id="booking-form-section">
+        <!-- 1. 預約表單區塊 (預設顯示，或是點修改後顯示) -->
+        <div id="booking-form-section" class="section-block">
             
-            <!-- User Profile -->
             <img id="userPicture" class="user-avatar" src="" alt="User">
             <p class="greeting">您好，<span id="userName"></span></p>
 
-            <!-- Form -->
             <form id="bookingForm" onsubmit="event.preventDefault(); submitBooking();">
-                
                 <div class="form-group">
                     <label>預約姓名</label>
                     <input type="text" id="inputName" placeholder="請輸入姓名" required>
@@ -331,14 +285,35 @@
                     <select id="inputTime" required>
                         <!-- JS 會自動產生選項 -->
                     </select>
-                    <!-- 新增的提醒文字 -->
                     <p class="reminder-text">送出不代表預約成功，請靜待預約成功訊息通知</p>
                 </div>
 
                 <button type="submit" id="submitBtn" class="btn-submit">確認預約</button>
-
                 <div class="debug-info">User ID: <span id="userIdText"></span></div>
             </form>
+        </div>
+
+        <!-- 2. 預約詳情區塊 (從卡片按鈕進來時顯示) -->
+        <div id="booking-details-section" class="section-block">
+            <h3 style="font-size:18px; margin-bottom:20px; color:var(--text-dark);">目前預約詳情</h3>
+            
+            <div class="details-card">
+                <div class="details-row">
+                    <span class="d-label">姓名</span>
+                    <span class="d-value" id="viewName"></span>
+                </div>
+                <div class="details-row">
+                    <span class="d-label">服務項目</span>
+                    <span class="d-value" id="viewService"></span>
+                </div>
+                <div class="details-row">
+                    <span class="d-label">預約時間</span>
+                    <span class="d-value" id="viewTime"></span>
+                </div>
+            </div>
+
+            <button onclick="switchToEditMode()" class="btn-submit">修改預約時段</button>
+            <button onclick="liff.closeWindow()" class="btn-submit btn-outline">關閉視窗</button>
         </div>
     </div>
 
@@ -346,51 +321,46 @@
     <div id="customModal" class="modal-overlay">
         <div class="custom-modal">
             <div class="modal-title">感謝您的預約！<br>請靜待確認通知</div>
-            
-            <div class="modal-content-list">
-                <p><span class="label">預約姓名：</span><span class="value" id="modalName"></span></p>
-                <p><span class="label">服務項目：</span><span class="value" id="modalService"></span></p>
-                <p><span class="label">預約日期：</span><span class="value" id="modalDate"></span></p>
-                <p><span class="label">預約時間：</span><span class="value" id="modalTime"></span></p>
+            <div class="details-card" style="background:var(--bg-color); border:none;">
+                <div class="details-row"><span class="d-label">姓名：</span><span class="d-value" id="modalName"></span></div>
+                <div class="details-row"><span class="d-label">項目：</span><span class="d-value" id="modalService"></span></div>
+                <div class="details-row"><span class="d-label">日期：</span><span class="d-value" id="modalDate"></span></div>
+                <div class="details-row"><span class="d-label">時間：</span><span class="d-value" id="modalTime"></span></div>
             </div>
-
             <button class="btn-modal-close" onclick="closeModal()">關閉</button>
         </div>
     </div>
 
     <script>
-        // ------------------------------------------------
-        // 1. 設定與工具函數
-        // ------------------------------------------------
-        
         const YOUR_LIFF_ID = '2008676848-7eEjQ8U9'; 
-        
-        // ★★★ 請確認這一步網址是否為最新部署的版本 ★★★
+        // ★★★ 請務必在此處填入您「重新部署」後取得的最新 Apps Script 網址 ★★★
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbydcE3HlUiYwqZs-auxP6aIsHd91UlQOBGGnDcyyOCUlO2sO5jqMENFe5MA61XciEKGWw/exec'; 
 
-        // 初始化時間選單 (10:00 - 20:00)
         function initTimeSlots() {
             const select = document.getElementById('inputTime');
-            const startHour = 10; 
-            const endHour = 20;   
-            
+            const startHour = 10; const endHour = 20;   
             for (let h = startHour; h <= endHour; h++) {
                 let hourStr = h.toString().padStart(2, '0');
                 select.add(new Option(`${hourStr}:00`, `${hourStr}:00`));
-                if (h !== endHour) {
-                    select.add(new Option(`${hourStr}:30`, `${hourStr}:30`));
-                }
+                if (h !== endHour) select.add(new Option(`${hourStr}:30`, `${hourStr}:30`));
             }
         }
 
-        // ------------------------------------------------
-        // 2. LIFF 初始化邏輯
-        // ------------------------------------------------
-        
+        // 解析網址參數的工具
+        function getQueryParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                mode: params.get('mode'),
+                name: params.get('name'),
+                service: params.get('service'),
+                time: params.get('time')
+            };
+        }
+
         window.onload = function() {
-            initTimeSlots(); // 產生時間選項
+            initTimeSlots();
             
-            // 預設日期為明天
+            // 預設日期
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             const yyyy = tomorrow.getFullYear();
@@ -398,52 +368,77 @@
             const dd = String(tomorrow.getDate()).padStart(2, '0');
             document.getElementById('inputDate').value = `${yyyy}-${mm}-${dd}`;
 
-            // 啟動 LIFF
             initializeLiff();
         };
 
         function initializeLiff() {
             liff.init({ liffId: YOUR_LIFF_ID })
                 .then(() => {
+                    document.getElementById('loading-status').style.display = 'none';
                     if (!liff.isLoggedIn()) {
                         liff.login();
                     } else {
-                        getUserProfile();
+                        handlePageLogic(); // 登入後決定顯示哪個畫面
                     }
                 })
                 .catch((err) => {
-                    document.getElementById('loading-status').innerText = "初始化失敗，請檢查 LIFF ID";
+                    document.getElementById('loading-status').innerText = "初始化失敗";
                     console.error('LIFF Init failed', err);
                 });
         }
 
-        // ------------------------------------------------
-        // 3. 取得用戶資料
-        // ------------------------------------------------
-
-        function getUserProfile() {
+        // --- 核心邏輯：決定顯示表單還是詳情 ---
+        function handlePageLogic() {
+            // 1. 先取得用戶資料 (為了 UserID)
             liff.getProfile().then(profile => {
-                document.getElementById('loading-status').style.display = 'none';
-                document.getElementById('booking-form-section').style.display = 'block';
-                
                 document.getElementById('userName').innerText = profile.displayName;
                 document.getElementById('inputName').value = profile.displayName;
                 document.getElementById('userIdText').innerText = profile.userId;
-
                 const img = document.getElementById('userPicture');
-                if (profile.pictureUrl) {
-                    img.src = profile.pictureUrl;
+                img.src = profile.pictureUrl ? profile.pictureUrl : "https://via.placeholder.com/80";
+
+                // 2. 檢查網址是否有參數 (代表是從卡片按鈕進來的)
+                const params = getQueryParams();
+                
+                if (params.mode === 'view') {
+                    // --- 顯示詳情模式 ---
+                    document.getElementById('booking-form-section').style.display = 'none';
+                    document.getElementById('booking-details-section').style.display = 'block';
+
+                    // 填入參數資料
+                    document.getElementById('viewName').innerText = params.name || profile.displayName;
+                    document.getElementById('viewService').innerText = params.service || "未指定";
+                    document.getElementById('viewTime').innerText = params.time || "未指定";
+
+                    // 同時把這些資料先填入表單，方便用戶修改
+                    document.getElementById('inputName').value = params.name || profile.displayName;
+                    if(params.service) document.getElementById('inputService').value = params.service;
+                    
+                    // 嘗試解析日期時間填回表單 (格式: 2025/01/01 14:00)
+                    if(params.time && params.time.includes(' ')) {
+                        const parts = params.time.split(' ');
+                        const datePart = parts[0].replace(/\//g, '-'); // 轉回 2025-01-01
+                        const timePart = parts[1];
+                        document.getElementById('inputDate').value = datePart;
+                        document.getElementById('inputTime').value = timePart;
+                    }
+
                 } else {
-                    img.src = "https://via.placeholder.com/80/EBE5E0/8C837B?text=Guest"; 
+                    // --- 顯示原本的預約表單 ---
+                    document.getElementById('booking-form-section').style.display = 'block';
+                    document.getElementById('booking-details-section').style.display = 'none';
                 }
-            }).catch(err => {
-                console.error('Profile Error:', err);
-            });
+
+            }).catch(err => console.error('Profile Error:', err));
         }
 
-        // ------------------------------------------------
-        // 4. 送出預約 (Google Sheet + LINE)
-        // ------------------------------------------------
+        // --- 切換到修改模式 ---
+        function switchToEditMode() {
+            document.getElementById('booking-details-section').style.display = 'none';
+            document.getElementById('booking-form-section').style.display = 'block';
+            // 讓按鈕文字變更，提示這是修改
+            document.getElementById('submitBtn').innerText = "確認修改預約";
+        }
 
         function submitBooking() {
             const name = document.getElementById('inputName').value;
@@ -453,91 +448,50 @@
             const time = document.getElementById('inputTime').value;
             const userId = document.getElementById('userIdText').innerText;
 
-            if(!name || !phone || !date) {
-                // 使用原生的 alert 提醒錯誤是 OK 的
-                alert("請填寫完整資訊");
-                return;
-            }
+            if(!name || !phone || !date) { alert("請填寫完整資訊"); return; }
 
-            // 鎖定按鈕避免重複發送
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
             submitBtn.innerText = "資料傳送中...";
 
-            // 準備傳送給 Google Sheet 的資料
-            const data = {
-                name: name,
-                phone: phone,
-                service: service,
-                date: date,
-                time: time,
-                userId: userId
-            };
-            
-            console.log("Preparing to send data to:", GOOGLE_SCRIPT_URL);
-            console.log("Data:", data);
+            const data = { name, phone, service, date, time, userId };
 
-            // 1. 發送至 Google Sheet
-            // ★★★ 重要：權限必須是「任何人 (Anyone)」 ★★★
+            // ★★★ 注意：這裡務必確保網址正確 ★★★
             if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.startsWith('https://script.google.com')) {
                 fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     body: JSON.stringify(data),
-                    mode: 'no-cors', // 繞過 CORS 限制
-                    headers: { 'Content-Type': 'text/plain' } // 使用 text/plain 避免 preflight 檢查
-                }).then(() => {
-                    console.log('Request sent to Google Sheet (no-cors mode)');
-                }).catch(err => {
-                    console.error('Google Sheet Error:', err);
-                });
+                    mode: 'no-cors', 
+                    headers: { 'Content-Type': 'text/plain' }
+                }).then(() => console.log('Sent')).catch(err => console.error(err));
             } else {
-                console.warn('Google Script URL 未設定或格式錯誤');
+                alert("系統錯誤：未設定後端網址");
+                submitBtn.disabled = false;
+                return;
             }
 
-            // 2. 嘗試發送 LINE 訊息 (給用戶自己看)
-            const messageText = `【預約資料已送出】\n姓名：${name}\n電話：${phone}\n項目：${service}\n時間：${date} ${time}`;
-
+            const messageText = `【預約修改/申請已送出】\n姓名：${name}\n電話：${phone}\n項目：${service}\n時間：${date} ${time}`;
             if (liff.isInClient()) {
-                liff.sendMessages([{
-                    type: 'text',
-                    text: messageText
-                }]).catch((err) => {
-                    console.error('Line Send Error:', err);
-                });
+                liff.sendMessages([{ type: 'text', text: messageText }]).catch(console.error);
             }
 
-            // 3. 顯示客製化成功彈窗
             showCustomModal(name, service, date, time);
-            
-            // 恢復按鈕
             submitBtn.disabled = false;
             submitBtn.innerText = "確認預約";
         }
 
-        // ------------------------------------------------
-        // 5. 客製化彈窗控制
-        // ------------------------------------------------
-
         function showCustomModal(name, service, date, time) {
-            // 填入資料
             document.getElementById('modalName').innerText = name;
             document.getElementById('modalService').innerText = service;
             document.getElementById('modalDate').innerText = date;
             document.getElementById('modalTime').innerText = time;
-
-            // 顯示彈窗
             document.getElementById('customModal').style.display = 'flex';
         }
 
         function closeModal() {
-            // 關閉彈窗
             document.getElementById('customModal').style.display = 'none';
-            // 關閉 LIFF 視窗
-            if (liff.isInClient()) {
-                liff.closeWindow();
-            }
+            if (liff.isInClient()) liff.closeWindow();
         }
     </script>
 </body>
 </html>
-
