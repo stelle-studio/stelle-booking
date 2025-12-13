@@ -139,7 +139,7 @@
             text-align-last: center; 
         }
 
-        /* ★★★ 唯讀(不可修改)欄位的樣式 ★★★ */
+        /* 唯讀(不可修改)欄位的樣式 */
         input:disabled, select:disabled {
             background-color: #EFEBE9; /* 淺灰色背景 */
             color: #8D6E63; /* 文字稍微變淡 */
@@ -364,7 +364,7 @@
                 service: params.get('service'),
                 time: params.get('time'),
                 phone: params.get('phone'),
-                status: params.get('status') // ★★★ 新增：讀取狀態參數 ★★★
+                status: params.get('status') 
             };
         }
 
@@ -373,13 +373,20 @@
         window.onload = function() {
             initTimeSlots();
             
-            // 預設日期
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
+            // ★★★ 日期控制邏輯更新 ★★★
+            // 設定預設日期為明天，並且將今天(含)以前的日期設為不可選 (min)
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+            
             const yyyy = tomorrow.getFullYear();
             const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
             const dd = String(tomorrow.getDate()).padStart(2, '0');
-            document.getElementById('inputDate').value = `${yyyy}-${mm}-${dd}`;
+            const tomorrowStr = `${yyyy}-${mm}-${dd}`;
+            
+            const dateInput = document.getElementById('inputDate');
+            dateInput.value = tomorrowStr; // 預設選取明天
+            dateInput.min = tomorrowStr;   // ★ 限制最小日期為明天 (今日與今日之前無法選擇)
 
             initializeLiff();
         };
@@ -422,29 +429,31 @@
                     document.getElementById('viewService').innerText = currentParams.service || "未指定";
                     document.getElementById('viewTime').innerText = currentParams.time || "未指定";
 
-                    // ★★★ 若狀態為 SUCCESS (預約成功)，則隱藏修改按鈕 ★★★
+                    // 若狀態為 SUCCESS (預約成功)，則隱藏修改按鈕
                     if (currentParams.status === 'SUCCESS') {
                         document.getElementById('btn-modify-booking').style.display = 'none';
                     } else {
-                        // 確保其他狀態 (PENDING, CANCELLED) 是顯示的
                         document.getElementById('btn-modify-booking').style.display = 'inline-block';
                     }
 
                     // 在背景先將表單填好，以免切換過去是空白
                     document.getElementById('inputName').value = currentParams.name || profile.displayName;
                     if(currentParams.service) document.getElementById('inputService').value = currentParams.service;
-                    if(currentParams.phone) document.getElementById('inputPhone').value = currentParams.phone; // 填入電話
+                    if(currentParams.phone) document.getElementById('inputPhone').value = currentParams.phone; 
                     
                     if(currentParams.time && currentParams.time.includes(' ')) {
                         const parts = currentParams.time.split(' ');
-                        document.getElementById('inputDate').value = parts[0].replace(/\//g, '-');
+                        const savedDate = parts[0].replace(/\//g, '-');
+                        
+                        // 檢查：如果舊訂單的日期已經是過去式(或今天)，雖然 inputDate 有 min 限制，但為了讓用戶能看到舊資料，
+                        // 我們還是會嘗試填入。不過若用戶要修改，HTML5 的 min 限制會生效，強迫他選明天以後的日期。
+                        document.getElementById('inputDate').value = savedDate;
                         document.getElementById('inputTime').value = parts[1];
                     }
                 } else {
                     // --- 正常預約模式 (全部可編輯) ---
                     document.getElementById('booking-form-section').style.display = 'block';
                     document.getElementById('booking-details-section').style.display = 'none';
-                    // 確保欄位是開啟的
                     enableAllFields();
                 }
 
@@ -499,7 +508,7 @@
                 date, 
                 time, 
                 userId,
-                secret: "Stelle2025Secure" // 必須跟後端設定的一模一樣
+                secret: "Stelle2025Secure" 
             };
 
             // ★★★ 注意：這裡務必確保網址正確 ★★★
@@ -516,15 +525,17 @@
                 return;
             }
 
-            const messageText = `【預約修改/申請已送出】\n姓名：${name}\n電話：${phone}\n項目：${service}\n時間：${date} ${time}`;
+            // ★★★ 修改這裡：傳送給使用者的 LINE 訊息改為固定文字 ★★★
             if (liff.isInClient()) {
-                liff.sendMessages([{ type: 'text', text: messageText }]).catch(console.error);
+                liff.sendMessages([{ 
+                    type: 'text', 
+                    text: '我已送出預約' 
+                }]).catch(console.error);
             }
 
             showCustomModal(name, service, date, time);
             submitBtn.disabled = false;
             
-            // 如果是修改模式，送出後維持按鈕文字，避免混淆
             if(currentParams.mode === 'view') {
                  submitBtn.innerText = "確認修改預約";
             } else {
@@ -547,4 +558,3 @@
     </script>
 </body>
 </html>
-
