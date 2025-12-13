@@ -10,263 +10,56 @@
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     
     <style>
-        /* --- 2025 新版摩卡配色 --- */
-        :root {
-            --primary-brown: #8D6E63;
-            --bg-color: #F8F6F3;
-            --card-white: #FFFFFF;
-            --text-dark: #5D4037;
-            --text-light: #8D6E63;
-            --accent-bar: #795548;
-            --input-bg: #FCFBF9;
-            --input-border: #E8E0DD;
-        }
-
+        /* ... (樣式區保持不變，省略以節省篇幅) ... */
+        :root { --primary-brown: #8D6E63; --bg-color: #F8F6F3; --card-white: #FFFFFF; --text-dark: #5D4037; --text-light: #8D6E63; --accent-bar: #795548; --input-bg: #FCFBF9; --input-border: #E8E0DD; }
         * { box-sizing: border-box; }
-
-        body {
-            font-family: 'Noto Sans TC', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-dark);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-        }
-
-        .container {
-            background-color: var(--card-white);
-            width: 100%;
-            max-width: 480px;
-            padding: 40px 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(93, 64, 55, 0.08);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        /* --- 標題區域 --- */
-        .brand-title {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 38px;
-            font-weight: 600;
-            color: var(--text-dark);
-            margin: 0 0 5px 0;
-            letter-spacing: 1px;
-        }
-
-        .sub-title {
-            font-size: 14px;
-            color: var(--text-light);
-            font-weight: 500;
-            margin-bottom: 30px;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-        }
-
-        /* --- 載入狀態 --- */
-        #loading-status {
-            font-size: 14px;
-            color: var(--text-light);
-            margin-top: 20px;
-            text-align: center;
-        }
-
-        /* --- 共用顯示控制 --- */
-        .section-block {
-            display: none; 
-            width: 100%;
-            text-align: center;
-            animation: fadeIn 0.8s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .user-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid var(--bg-color);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-            margin-bottom: 15px;
-        }
-
-        .greeting {
-            font-size: 16px;
-            color: var(--text-dark);
-            margin-bottom: 25px;
-        }
-
-        .greeting span {
-            font-weight: 500;
-            color: var(--primary-brown);
-        }
-
-        /* --- 表單樣式 --- */
-        .form-group {
-            text-align: center; 
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            font-size: 14px;
-            color: var(--text-light);
-            margin-bottom: 8px;
-            font-weight: 500;
-            text-align: left; 
-            padding-left: 5px; 
-        }
-
-        input, select {
-            width: 100%;
-            padding: 12px 15px;
-            border: 1px solid var(--input-border);
-            background-color: var(--input-bg);
-            border-radius: 8px;
-            font-size: 16px; 
-            color: var(--text-dark);
-            outline: none;
-            transition: all 0.3s ease;
-            appearance: none; 
-            text-align: center; 
-            text-align-last: center; 
-        }
-
-        /* ★★★ 唯讀(不可修改)欄位的樣式 ★★★ */
-        input:disabled, select:disabled {
-            background-color: #EFEBE9; /* 淺灰色背景 */
-            color: #8D6E63; /* 文字稍微變淡 */
-            cursor: not-allowed;
-            border-color: #E0E0E0;
-        }
-
-        select {
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238D6E63' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 15px center; 
-            background-size: 16px;
-        }
-
-        input:focus, select:focus {
-            border-color: var(--primary-brown);
-            background-color: #fff;
-            box-shadow: 0 0 0 3px rgba(141, 110, 99, 0.1);
-        }
-        
-        ::placeholder {
-            color: #D7CCC8;
-            opacity: 1;
-            text-align: center; 
-        }
-
-        /* 按鈕樣式 */
-        .btn-submit {
-            background-color: var(--primary-brown);
-            color: white;
-            border: none;
-            padding: 15px;
-            width: 100%;
-            font-size: 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-top: 15px;
-            letter-spacing: 1.5px;
-            transition: background 0.3s;
-            font-weight: 500;
-        }
-
-        .btn-submit:hover {
-            background-color: var(--accent-bar);
-        }
-        
-        .btn-outline {
-            background-color: transparent;
-            color: var(--primary-brown);
-            border: 1px solid var(--primary-brown);
-            margin-top: 10px;
-        }
-        .btn-outline:hover {
-            background-color: #FDF3F0;
-        }
-
-        .btn-submit:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-
-        .debug-info {
-            font-size: 10px;
-            color: #E0E0E0;
-            margin-top: 30px;
-            word-break: break-all;
-        }
-
-        /* --- 詳情卡片樣式 --- */
-        .details-card {
-            background: #FAFAFA;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            text-align: left;
-            border: 1px solid #EFEFEF;
-        }
-        .details-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            border-bottom: 1px dashed #E0E0E0;
-            padding-bottom: 8px;
-        }
-        .details-row:last-child {
-            border-bottom: none;
-        }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--bg-color); color: var(--text-dark); margin: 0; padding: 20px; display: flex; justify-content: center; min-height: 100vh; }
+        .container { background-color: var(--card-white); width: 100%; max-width: 480px; padding: 40px 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(93, 64, 55, 0.08); display: flex; flex-direction: column; align-items: center; }
+        .brand-title { font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 600; color: var(--text-dark); margin: 0 0 5px 0; letter-spacing: 1px; }
+        .sub-title { font-size: 14px; color: var(--text-light); font-weight: 500; margin-bottom: 30px; letter-spacing: 3px; text-transform: uppercase; }
+        #loading-status { font-size: 14px; color: var(--text-light); margin-top: 20px; text-align: center; }
+        .section-block { display: none; width: 100%; text-align: center; animation: fadeIn 0.8s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .user-avatar { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--bg-color); box-shadow: 0 4px 10px rgba(0,0,0,0.08); margin-bottom: 15px; }
+        .greeting { font-size: 16px; color: var(--text-dark); margin-bottom: 25px; }
+        .greeting span { font-weight: 500; color: var(--primary-brown); }
+        .form-group { text-align: center; margin-bottom: 20px; }
+        label { display: block; font-size: 14px; color: var(--text-light); margin-bottom: 8px; font-weight: 500; text-align: left; padding-left: 5px; }
+        input, select { width: 100%; padding: 12px 15px; border: 1px solid var(--input-border); background-color: var(--input-bg); border-radius: 8px; font-size: 16px; color: var(--text-dark); outline: none; transition: all 0.3s ease; appearance: none; text-align: center; text-align-last: center; }
+        input:disabled, select:disabled { background-color: #EFEBE9; color: #8D6E63; cursor: not-allowed; border-color: #E0E0E0; }
+        select { background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238D6E63' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 15px center; background-size: 16px; }
+        input:focus, select:focus { border-color: var(--primary-brown); background-color: #fff; box-shadow: 0 0 0 3px rgba(141, 110, 99, 0.1); }
+        .btn-submit { background-color: var(--primary-brown); color: white; border: none; padding: 15px; width: 100%; font-size: 16px; border-radius: 8px; cursor: pointer; margin-top: 15px; letter-spacing: 1.5px; transition: background 0.3s; font-weight: 500; }
+        .btn-submit:hover { background-color: var(--accent-bar); }
+        .btn-outline { background-color: transparent; color: var(--primary-brown); border: 1px solid var(--primary-brown); margin-top: 10px; }
+        .btn-outline:hover { background-color: #FDF3F0; }
+        .btn-submit:disabled { background-color: #ccc; cursor: not-allowed; }
+        .debug-info { font-size: 10px; color: #E0E0E0; margin-top: 30px; word-break: break-all; }
+        .details-card { background: #FAFAFA; border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: left; border: 1px solid #EFEFEF; }
+        .details-row { display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px dashed #E0E0E0; padding-bottom: 8px; }
+        .details-row:last-child { border-bottom: none; }
         .d-label { color: var(--text-light); font-size: 14px; }
         .d-value { color: var(--text-dark); font-weight: 600; font-size: 15px; }
-
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; animation: fadeIn 0.3s; }
         .custom-modal { background: #fff; width: 85%; max-width: 360px; padding: 30px 25px; border-radius: 16px; text-align: center; }
         .modal-title { font-size: 18px; color: var(--primary-brown); font-weight: 600; margin-bottom: 20px; }
         .btn-modal-close { background-color: var(--primary-brown); color: white; border: none; padding: 12px 0; width: 100%; border-radius: 6px; cursor: pointer; }
         .reminder-text { font-size: 13px; color: var(--primary-brown); margin-top: 12px; margin-bottom: 5px; font-weight: 500; }
-
     </style>
 </head>
 <body>
-
     <div class="container">
-        <!-- Header -->
         <h1 class="brand-title">Stelle studio</h1>
         <h2 class="sub-title">蒔黛美學 線上預約</h2>
-
-        <!-- Loading State -->
         <div id="loading-status">LINE 系統連線中...</div>
 
-        <!-- 1. 預約表單區塊 (預設顯示，或是點修改後顯示) -->
         <div id="booking-form-section" class="section-block">
-            
             <img id="userPicture" class="user-avatar" src="" alt="User">
             <p class="greeting">您好，<span id="userName"></span></p>
-
             <form id="bookingForm" onsubmit="event.preventDefault(); submitBooking();">
-                <div class="form-group">
-                    <label>預約姓名</label>
-                    <input type="text" id="inputName" placeholder="請輸入姓名" required>
-                </div>
-
-                <div class="form-group">
-                    <label>聯絡電話</label>
-                    <input type="tel" id="inputPhone" placeholder="09xx-xxx-xxx" required>
-                </div>
-
-                <div class="form-group">
-                    <label>服務項目</label>
+                <div class="form-group"><label>預約姓名</label><input type="text" id="inputName" placeholder="請輸入姓名" required></div>
+                <div class="form-group"><label>聯絡電話</label><input type="tel" id="inputPhone" placeholder="09xx-xxx-xxx" required></div>
+                <div class="form-group"><label>服務項目</label>
                     <select id="inputService">
                         <option value="粉黛柔霧眉 $7,990">粉黛柔霧眉 $7,990</option>
                         <option value="立體野生眉 $9,990">立體野生眉 $9,990</option>
@@ -282,51 +75,25 @@
                         <option value="超過 3 個月補色 $半價">超過 3 個月補色 $半價</option>
                     </select>
                 </div>
-
-                <div class="form-group">
-                    <label>期望日期</label>
-                    <input type="date" id="inputDate" required>
-                </div>
-
-                <div class="form-group">
-                    <label>期望時間</label>
-                    <select id="inputTime" required>
-                        <!-- JS 會自動產生選項 -->
-                    </select>
-                    <p class="reminder-text">送出不代表預約成功，請靜待預約成功訊息通知</p>
-                </div>
-
+                <div class="form-group"><label>期望日期</label><input type="date" id="inputDate" required></div>
+                <div class="form-group"><label>期望時間</label><select id="inputTime" required></select><p class="reminder-text">送出不代表預約成功，請靜待預約成功訊息通知</p></div>
                 <button type="submit" id="submitBtn" class="btn-submit">確認預約</button>
                 <div class="debug-info">User ID: <span id="userIdText"></span></div>
             </form>
         </div>
 
-        <!-- 2. 預約詳情區塊 (從卡片按鈕進來時顯示) -->
         <div id="booking-details-section" class="section-block">
             <h3 style="font-size:18px; margin-bottom:20px; color:var(--text-dark);">目前預約詳情</h3>
-            
             <div class="details-card">
-                <div class="details-row">
-                    <span class="d-label">姓名</span>
-                    <span class="d-value" id="viewName"></span>
-                </div>
-                <div class="details-row">
-                    <span class="d-label">服務項目</span>
-                    <span class="d-value" id="viewService"></span>
-                </div>
-                <div class="details-row">
-                    <span class="d-label">預約時間</span>
-                    <span class="d-value" id="viewTime"></span>
-                </div>
+                <div class="details-row"><span class="d-label">姓名</span><span class="d-value" id="viewName"></span></div>
+                <div class="details-row"><span class="d-label">服務項目</span><span class="d-value" id="viewService"></span></div>
+                <div class="details-row"><span class="d-label">預約時間</span><span class="d-value" id="viewTime"></span></div>
             </div>
-
-            <!-- ★★★ 新增 ID 方便控制顯示/隱藏 ★★★ -->
             <button id="btn-modify-booking" onclick="switchToEditMode()" class="btn-submit">修改預約時段</button>
             <button onclick="liff.closeWindow()" class="btn-submit btn-outline">關閉視窗</button>
         </div>
     </div>
 
-    <!-- 客製化彈窗 (Modal) -->
     <div id="customModal" class="modal-overlay">
         <div class="custom-modal">
             <div class="modal-title">感謝您的預約！<br>請靜待確認通知</div>
@@ -342,8 +109,8 @@
 
     <script>
         const YOUR_LIFF_ID = '2008676848-7eEjQ8U9'; 
-        // ★★★ 請務必確認這裡的網址是您最新的 Apps Script 部署網址 ★★★
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzFZMsvRXC1Muvh6J2vcOTErZPpYPJgTezDEoeDPUDf1bQQgVkzbdJPNQ_Pe9PXEdSRQA/exec'; 
+        // ★★★ 務必更新為您「重新部署」後的 Apps Script 網址 ★★★
+        const GOOGLE_SCRIPT_URL = 'YOUR_GOOGLE_SCRIPT_URL_HERE'; 
 
         function initTimeSlots() {
             const select = document.getElementById('inputTime');
@@ -355,7 +122,6 @@
             }
         }
 
-        // 解析網址參數的工具
         function getQueryParams() {
             const params = new URLSearchParams(window.location.search);
             return {
@@ -364,16 +130,15 @@
                 service: params.get('service'),
                 time: params.get('time'),
                 phone: params.get('phone'),
-                status: params.get('status') // ★★★ 新增：讀取狀態參數 ★★★
+                status: params.get('status')
             };
         }
-
         let currentParams = {}; 
 
         window.onload = function() {
             initTimeSlots();
             
-            // ★★★ 日期限制：只能選明天以後 ★★★
+            // ★★★ 設定日期限制 (HTML5 min) ★★★
             const today = new Date();
             const tomorrow = new Date(today);
             tomorrow.setDate(today.getDate() + 1);
@@ -385,28 +150,30 @@
             
             const dateInput = document.getElementById('inputDate');
             dateInput.value = tomorrowStr; 
-            dateInput.min = tomorrowStr;   // 限制最小日期
+            dateInput.min = tomorrowStr;   
+
+            // ★★★ 新增：JS 強制檢查 (針對 iOS 不支援 min 屬性的解決方案) ★★★
+            dateInput.addEventListener('change', function() {
+                if (this.value < tomorrowStr) {
+                    alert("請選擇明天以後的日期");
+                    this.value = tomorrowStr; // 強制重置為明天
+                }
+            });
 
             initializeLiff();
         };
 
         function initializeLiff() {
-            liff.init({ liffId: YOUR_LIFF_ID })
-                .then(() => {
-                    document.getElementById('loading-status').style.display = 'none';
-                    if (!liff.isLoggedIn()) {
-                        liff.login();
-                    } else {
-                        handlePageLogic(); 
-                    }
-                })
-                .catch((err) => {
-                    document.getElementById('loading-status').innerText = "初始化失敗";
-                    console.error('LIFF Init failed', err);
-                });
+            liff.init({ liffId: YOUR_LIFF_ID }).then(() => {
+                document.getElementById('loading-status').style.display = 'none';
+                if (!liff.isLoggedIn()) liff.login();
+                else handlePageLogic();
+            }).catch((err) => {
+                document.getElementById('loading-status').innerText = "初始化失敗";
+                console.error(err);
+            });
         }
 
-        // --- 核心邏輯：決定顯示表單還是詳情 ---
         function handlePageLogic() {
             liff.getProfile().then(profile => {
                 document.getElementById('userName').innerText = profile.displayName;
@@ -415,69 +182,44 @@
                 const img = document.getElementById('userPicture');
                 img.src = profile.pictureUrl ? profile.pictureUrl : "https://via.placeholder.com/80";
 
-                // 2. 檢查網址是否有參數
                 currentParams = getQueryParams();
-                
                 if (currentParams.mode === 'view') {
-                    // --- 顯示詳情模式 ---
                     document.getElementById('booking-form-section').style.display = 'none';
                     document.getElementById('booking-details-section').style.display = 'block';
-
-                    // 填入詳情資料
                     document.getElementById('viewName').innerText = currentParams.name || profile.displayName;
                     document.getElementById('viewService').innerText = currentParams.service || "未指定";
                     document.getElementById('viewTime').innerText = currentParams.time || "未指定";
 
-                    // ★★★ 若狀態為 SUCCESS (預約成功)，則隱藏修改按鈕 ★★★
-                    if (currentParams.status === 'SUCCESS') {
-                        document.getElementById('btn-modify-booking').style.display = 'none';
-                    } else {
-                        // 確保其他狀態 (PENDING, CANCELLED) 是顯示的
-                        document.getElementById('btn-modify-booking').style.display = 'inline-block';
-                    }
+                    if (currentParams.status === 'SUCCESS') document.getElementById('btn-modify-booking').style.display = 'none';
+                    else document.getElementById('btn-modify-booking').style.display = 'inline-block';
 
-                    // 在背景先將表單填好，以免切換過去是空白
                     document.getElementById('inputName').value = currentParams.name || profile.displayName;
                     if(currentParams.service) document.getElementById('inputService').value = currentParams.service;
-                    if(currentParams.phone) document.getElementById('inputPhone').value = currentParams.phone; // 填入電話
-                    
+                    if(currentParams.phone) document.getElementById('inputPhone').value = currentParams.phone;
                     if(currentParams.time && currentParams.time.includes(' ')) {
                         const parts = currentParams.time.split(' ');
-                        const savedDate = parts[0].replace(/\//g, '-');
-                        
-                        // 嘗試填入舊日期
-                        document.getElementById('inputDate').value = savedDate;
+                        document.getElementById('inputDate').value = parts[0].replace(/\//g, '-');
                         document.getElementById('inputTime').value = parts[1];
                     }
                 } else {
-                    // --- 正常預約模式 (全部可編輯) ---
                     document.getElementById('booking-form-section').style.display = 'block';
                     document.getElementById('booking-details-section').style.display = 'none';
-                    // 確保欄位是開啟的
                     enableAllFields();
                 }
-
             }).catch(err => console.error('Profile Error:', err));
         }
 
-        // --- 切換到修改模式 (鎖定舊資料) ---
         function switchToEditMode() {
             document.getElementById('booking-details-section').style.display = 'none';
             document.getElementById('booking-form-section').style.display = 'block';
-            
-            // ★★★ 關鍵：鎖定不可修改的欄位 ★★★
             document.getElementById('inputName').disabled = true;
             document.getElementById('inputPhone').disabled = true;
             document.getElementById('inputService').disabled = true;
-            
-            // 確保日期時間是可以修改的
             document.getElementById('inputDate').disabled = false;
             document.getElementById('inputTime').disabled = false;
-
             document.getElementById('submitBtn').innerText = "確認修改預約";
         }
 
-        // 輔助：開啟所有欄位 (給一般預約用)
         function enableAllFields() {
             document.getElementById('inputName').disabled = false;
             document.getElementById('inputPhone').disabled = false;
@@ -501,16 +243,7 @@
             submitBtn.disabled = true;
             submitBtn.innerText = "資料傳送中...";
 
-            // ★★★ 包含 secret ★★★
-            const data = { 
-                name, 
-                phone, 
-                service, 
-                date, 
-                time, 
-                userId,
-                secret: "Stelle2025Secure" 
-            };
+            const data = { name, phone, service, date, time, userId, secret: "Stelle2025Secure" };
 
             // 1. 發送後端請求
             if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.startsWith('https://script.google.com')) {
@@ -526,27 +259,20 @@
                 return;
             }
 
-            // 2. ★★★ 自動傳送訊息「我已送出預約」 ★★★
+            // 2. 自動傳送訊息 (增加錯誤提示)
             if (liff.isInClient()) {
-                liff.sendMessages([{ 
-                    type: 'text', 
-                    text: '我已送出預約' 
-                }]).then(() => {
-                    console.log("LINE 訊息發送成功");
-                }).catch((err) => {
-                    console.error("LINE 訊息發送失敗:", err);
-                    // 這裡可以選擇要不要跳 alert，目前是靜默失敗
-                });
+                liff.sendMessages([{ type: 'text', text: '我已送出預約' }])
+                    .then(() => console.log("Sent"))
+                    .catch((err) => {
+                        // ★★★ 錯誤提示：讓使用者知道為什麼訊息發不出去 ★★★
+                        alert("LINE 訊息發送失敗！\n原因：" + err.message + "\n請確認您是否允許了傳訊權限，或直接手動傳送訊息通知店家。");
+                    });
             }
 
             showCustomModal(name, service, date, time);
             submitBtn.disabled = false;
-            
-            if(currentParams.mode === 'view') {
-                 submitBtn.innerText = "確認修改預約";
-            } else {
-                 submitBtn.innerText = "確認預約";
-            }
+            if(currentParams.mode === 'view') submitBtn.innerText = "確認修改預約";
+            else submitBtn.innerText = "確認預約";
         }
 
         function showCustomModal(name, service, date, time) {
