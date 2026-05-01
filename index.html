@@ -547,10 +547,9 @@
 
     <script>
         const YOUR_LIFF_ID = '2008676848-7eEjQ8U9';
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzFZMsvRXC1Muvh6J2vcOTErZPpYPJgTezDEoeDPUDf1bQQgVkzbdJPNQ_Pe9PXEdSRQA/exec';
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbztqgnmXls9gXduz1GBXFAVnNmvCic4gYkRN5AxTQhvllu9lOtwJf47KWtqrmz6Ot1FfQ/exec';
 
-        // 正式版：連接 LINE LIFF。
-        // 若未來要讓 Google Sheet 即時控制不可預約時段，建議由 Apps Script 提供查詢 API 再回填 unavailableSlots。
+        // 正式版：連接 LINE LIFF，並透過 Apps Script action=slots 讀取 Google Sheet 的不可預約時段。
         const unavailableSlots = {};
 
         // 固定不開放的例行時段，例如午休或收尾時間。
@@ -599,7 +598,8 @@
             time: '',
             isEditMode: false,
             currentParams: {},
-            openCategory: null
+            openCategory: null,
+            slotRequestId: 0
         };
 
         function money(value) {
@@ -673,12 +673,13 @@
             dateInput.value = tomorrowStr;
             dateInput.min = tomorrowStr;
             state.date = tomorrowStr;
-            dateInput.addEventListener('change', function() {
+            dateInput.addEventListener('change', async function() {
                 if (this.value < tomorrowStr) {
                     alert('請選擇明天以後的日期');
                     this.value = tomorrowStr;
                 }
                 state.date = this.value;
+                await loadUnavailableSlots();
                 ensureSelectedTimeIsAvailable();
                 renderTimeSlots();
                 renderConfirm();
@@ -697,6 +698,7 @@
             }
             if (!state.time) state.time = '10:00';
             renderTimeSlots();
+            loadUnavailableSlots();
         }
 
         function createTimeButton(time) {
@@ -718,6 +720,66 @@
             const location = state.location;
             const dateBlocked = unavailableSlots[date]?.[location] || [];
             return blockedRegularSlots.includes(time) || dateBlocked.includes(time);
+        }
+
+        function setUnavailableSlots(date, location, slots) {
+            if (!date || !location) return;
+            if (!unavailableSlots[date]) unavailableSlots[date] = {};
+            unavailableSlots[date][location] = Array.isArray(slots) ? slots : [];
+        }
+
+        function loadUnavailableSlots() {
+            const date = document.getElementById('inputDate')?.value || state.date;
+            const location = state.location;
+            if (!date || !location || !GOOGLE_SCRIPT_URL || !GOOGLE_SCRIPT_URL.startsWith('https://script.google.com')) {
+                return Promise.resolve([]);
+            }
+
+            const requestId = ++state.slotRequestId;
+            const callbackName = `stelleSlotsCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+            return new Promise(resolve => {
+                let script;
+                const cleanup = () => {
+                    if (script && script.parentNode) script.parentNode.removeChild(script);
+                    try { delete window[callbackName]; } catch (e) { window[callbackName] = undefined; }
+                };
+
+                const timer = setTimeout(() => {
+                    cleanup();
+                    console.warn('不可預約時段讀取逾時');
+                    resolve([]);
+                }, 8000);
+
+                window[callbackName] = function(response) {
+                    clearTimeout(timer);
+                    cleanup();
+                    if (requestId !== state.slotRequestId) {
+                        resolve([]);
+                        return;
+                    }
+                    if (response && response.status === 'success') {
+                        setUnavailableSlots(date, location, response.unavailableSlots || []);
+                        ensureSelectedTimeIsAvailable();
+                        renderTimeSlots();
+                        renderConfirm();
+                        resolve(response.unavailableSlots || []);
+                    } else {
+                        console.warn('不可預約時段讀取失敗', response);
+                        resolve([]);
+                    }
+                };
+
+                script = document.createElement('script');
+                script.src = `${GOOGLE_SCRIPT_URL}?action=slots&date=${encodeURIComponent(date)}&location=${encodeURIComponent(location)}&callback=${encodeURIComponent(callbackName)}&t=${Date.now()}`;
+                script.onerror = () => {
+                    clearTimeout(timer);
+                    cleanup();
+                    console.warn('不可預約時段 API 載入失敗');
+                    resolve([]);
+                };
+                document.body.appendChild(script);
+            });
         }
 
         function ensureSelectedTimeIsAvailable() {
@@ -749,11 +811,12 @@
                 btn.className = 'location-tab';
                 btn.dataset.location = loc.legacy;
                 btn.innerHTML = `${loc.name}<span class="address">${loc.address}</span>`;
-                btn.onclick = () => {
+                btn.onclick = async () => {
                     if (state.isEditMode) return;
                     state.location = loc.legacy;
-                    ensureSelectedTimeIsAvailable();
                     renderLocations();
+                    await loadUnavailableSlots();
+                    ensureSelectedTimeIsAvailable();
                     renderTimeSlots();
                     renderConfirm();
                 };
@@ -883,7 +946,7 @@
             return true;
         }
 
-        function goToStep(nextStep) {
+        async function goToStep(nextStep) {
             if (nextStep > state.step && !validateStep(state.step)) return;
             state.step = nextStep;
             document.querySelectorAll('.step-panel').forEach(panel => panel.classList.remove('active'));
@@ -892,6 +955,11 @@
                 const el = document.getElementById(`progress-${i}`);
                 el.classList.toggle('active', i === nextStep);
                 el.classList.toggle('done', i < nextStep);
+            }
+            if (nextStep === 3) {
+                await loadUnavailableSlots();
+                ensureSelectedTimeIsAvailable();
+                renderTimeSlots();
             }
             if (nextStep === 4) renderConfirm();
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -951,6 +1019,7 @@
             renderLocations();
             ensureSelectedTimeIsAvailable();
             renderTimeSlots();
+            loadUnavailableSlots();
             renderConfirm();
         }
 
@@ -1000,7 +1069,7 @@
             }
         }
 
-        function submitBooking() {
+        async function submitBooking() {
             if (!validateStep(1) || !validateStep(2)) return;
 
             const name = document.getElementById('inputName').value.trim();
@@ -1016,6 +1085,15 @@
 
             if (!userId) {
                 alert('系統尚未讀取到您的 UserID，請稍候再試或重新整理頁面。');
+                return;
+            }
+
+            await loadUnavailableSlots();
+            if (isTimeUnavailable(time)) {
+                alert('此時段已不可預約，請重新選擇其他時間。');
+                ensureSelectedTimeIsAvailable();
+                renderTimeSlots();
+                goToStep(3);
                 return;
             }
 
