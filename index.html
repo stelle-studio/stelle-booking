@@ -51,31 +51,36 @@
         }
 
         .brand-header {
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            gap: 14px;
             border-bottom: 1px solid var(--input-border);
             padding-bottom: 18px;
             margin-bottom: 18px;
         }
 
+        .brand-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
         .brand-title {
             font-family: 'Cormorant Garamond', serif;
-            font-size: 40px;
+            font-size: clamp(34px, 9vw, 40px);
             font-style: italic;
             font-weight: 600;
             color: var(--deep-brown);
             margin: 0;
             letter-spacing: 0.5px;
             line-height: 0.95;
+            white-space: nowrap;
         }
 
         .sub-title {
             font-size: 12px;
             color: var(--text-light);
             font-weight: 500;
-            margin: 8px 0 0;
+            margin: 0;
             letter-spacing: 3px;
             text-transform: uppercase;
         }
@@ -92,6 +97,7 @@
             max-width: 230px;
             text-align: center;
             box-shadow: 0 6px 14px rgba(93, 64, 55, 0.06);
+            flex: 0 0 auto;
         }
 
         #loading-status {
@@ -213,6 +219,21 @@
             border-color: var(--primary-brown);
             background-color: #fff;
             box-shadow: 0 0 0 3px rgba(141,110,99,0.12);
+        }
+
+        input[type="date"] {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            -webkit-appearance: none;
+            appearance: none;
+            text-align: center;
+            background-clip: padding-box;
+        }
+
+        .form-group, .step-panel {
+            min-width: 0;
         }
 
         .service-grid { display: grid; gap: 10px; }
@@ -402,12 +423,13 @@
         .modal-title { font-size: 18px; color: var(--primary-brown); font-weight: 700; margin-bottom: 16px; line-height: 1.6; }
         .btn-modal-close { background-color: var(--primary-brown); color: white; border: none; padding: 13px 0; width: 100%; border-radius: 12px; cursor: pointer; font-family: inherit; font-weight: 600; }
 
-        @media (max-width: 390px) {
+        @media (max-width: 430px) {
             body { padding: 10px; }
             .container { padding: 24px 16px; border-radius: 22px; }
-            .brand-header { align-items: flex-start; flex-direction: column; gap: 12px; }
-            .brand-title { font-size: 34px; }
-            .mini-badge { max-width: 100%; white-space: normal; }
+            .brand-top { align-items: flex-start; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+            .brand-title { font-size: 36px; }
+            .mini-badge { max-width: 100%; white-space: normal; text-align: left; }
+            input[type="date"] { font-size: 16px; padding-left: 10px; padding-right: 10px; }
             .time-grid { grid-template-columns: repeat(2, 1fr); }
             .location-tabs { grid-template-columns: 1fr; }
         }
@@ -416,11 +438,11 @@
 <body>
     <main class="container">
         <header class="brand-header">
-            <div>
+            <div class="brand-top">
                 <h1 class="brand-title">Stelle studio</h1>
-                <p class="sub-title">蒔黛美學 線上預約</p>
+                <div class="mini-badge">設計系出身｜新中式美睫 × 骨相眉</div>
             </div>
-            <div class="mini-badge">設計系出身｜新中式美睫 × 骨相眉</div>
+            <p class="sub-title">蒔黛美學 線上預約</p>
         </header>
 
         <div id="loading-status">LINE 系統連線中...</div>
@@ -559,7 +581,7 @@
 
     <script>
         const YOUR_LIFF_ID = '2008676848-7eEjQ8U9';
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbztqgnmXls9gXduz1GBXFAVnNmvCic4gYkRN5AxTQhvllu9lOtwJf47KWtqrmz6Ot1FfQ/exec';
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzFZMsvRXC1Muvh6J2vcOTErZPpYPJgTezDEoeDPUDf1bQQgVkzbdJPNQ_Pe9PXEdSRQA/exec';
 
         // 正式版：連接 LINE LIFF，並透過 Apps Script action=slots 讀取 Google Sheet 的不可預約時段。
         const unavailableSlots = {};
