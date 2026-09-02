@@ -456,7 +456,7 @@
                 </div>
             </div>
 
-            <p class="service-note">全預約制・每位顧客皆為 1:1 專屬服務</p>
+            <p class="service-note">全預約制・每位顧客皆為 1:1 專屬服務<br>系統會依所選項目的操作時間，自動保留前後各 30 分鐘整理時段</p>
 
             <div class="progress-bar" aria-label="預約流程">
                 <div class="progress-step active" data-step="1" id="progress-1">填寫資訊</div>
@@ -515,7 +515,7 @@
                     <div class="form-group">
                         <div class="section-label">期望時間</div>
                         <div id="timeGrid" class="time-grid"></div>
-                        <p id="slotSyncStatus" class="slot-sync-status">進入此步驟後會同步最新可預約時段。</p>
+                        <p id="slotSyncStatus" class="slot-sync-status">進入此步驟後會同步最新可預約時段；已預約項目會連同操作時間及前後各 30 分鐘一起保留。</p>
                         <p class="reminder-text">送出不代表預約成功，請靜待預約成功訊息通知。</p>
                     </div>
 
@@ -538,6 +538,7 @@
                             <div class="details-row"><span class="d-label">據點</span><span class="d-value" id="confirmLocation"></span></div>
                             <div class="details-row"><span class="d-label">日期時間</span><span class="d-value" id="confirmDateTime"></span></div>
                             <div class="details-row"><span class="d-label">操作時間</span><span class="d-value" id="confirmDuration"></span></div>
+                            <div class="details-row"><span class="d-label">時段緩衝</span><span class="d-value">前後各 30 分鐘</span></div>
                             <div class="total-row"><span>預估總金額</span><span class="total-amount" id="confirmTotal">$0</span></div>
                         </div>
                     </div>
@@ -584,38 +585,61 @@
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbztqgnmXls9gXduz1GBXFAVnNmvCic4gYkRN5AxTQhvllu9lOtwJf47KWtqrmz6Ot1FfQ/exec';
 
         // 正式版：連接 LINE LIFF，並透過 Apps Script action=slots 讀取 Google Sheet 的不可預約時段。
+        // 後端最好回傳 bookings: [{ start: '11:00', durationMinutes: 180 }]；
+        // 若仍回傳 unavailableSlots，請後端將既有預約的操作時間與前後 30 分鐘展開成每 30 分鐘格。
         const unavailableSlots = {};
 
         // 固定不開放的例行時段，例如午休或收尾時間。
         const blockedRegularSlots = ['12:00', '12:30'];
 
+        // 每筆預約前後各保留 30 分鐘，作為整理、消毒與前後客人緩衝。
+        const BOOKING_BUFFER_MINUTES = 30;
+
         const serviceCategories = [
-            { key: '眉部', title: '眉部', subtitle: '霧眉、野生眉、舊眉調整與除色規劃' },
-            { key: '唇部', title: '唇部', subtitle: '潤色、暗沉調整與氣色提升' },
-            { key: '眼部', title: '眼部', subtitle: '睫毛管理、新中式美睫、卸睫與下睫毛設計' },
-            { key: '補色回訪', title: '補色 / 回訪', subtitle: '眉毛補色、唇部補色與包套回訪', note: '此區僅限已完成正式服務之舊客預約。若您是首次預約，請選擇眉部、唇部或眼部正式服務。' }
+            { key: '眉部', title: '眉部', subtitle: '霧眉、野生眉、舊眉淡色規劃' },
+            { key: '唇部', title: '唇部', subtitle: '潤色、暗沉調整與唇色淡化規劃' },
+            { key: '眼部', title: '眼部', subtitle: '日式單根、新中式美睫、韓式睫毛管理與卸睫' },
+            { key: '補色回訪', title: '補色 / 回訪', subtitle: '眉毛補色、唇部補色與睫毛回訪', note: '此區僅限已完成正式服務之舊客預約。若您是首次預約，請選擇眉部、唇部或眼部正式服務。' }
         ];
 
         const services = [
-            { id: 'misty_brow', name: '粉黛柔霧眉', price: 7990, duration: 180, category: '眉部', group: 'brow', legacy: '粉黛柔霧眉 $7,990', description: '柔霧妝感眉型，改善眉色不均與眉型空洞，適合想要日常有精神、但不想太銳利的人。' },
-            { id: 'wild_brow', name: '立體野生眉', price: 9990, duration: 210, category: '眉部', group: 'brow', legacy: '立體野生眉 $9,990', description: '以仿真毛流線條增加眉毛立體度，適合原生眉稀疏、想保留自然感的人。' },
-            { id: 'combo_brow', name: '野生粉黛眉', price: 13990, duration: 240, category: '眉部', group: 'brow', legacy: '野生粉黛眉 $13,990', description: '線條與柔霧結合，兼顧毛流感與妝感，適合想要精緻但不公版的眉型。' },
-            { id: 'brow_removal_single', name: '單次微創洗眉', price: 1990, duration: 90, category: '眉部', group: 'brow', legacy: '單次微創洗眉 $1,990', description: '針對舊眉色塊、發灰或不適合的眉型做漸進式淡化，讓後續重新設計更乾淨。' },
-            { id: 'removal_package', name: '無限包套優惠', price: 8990, duration: 90, category: '眉部', group: 'brow', legacy: '無限包套優惠 $8,990', description: '適合舊色較深、需要多次除色規劃的人，降低單次決策壓力。' },
-            { id: 'soft_lip', name: '輕染潤霧唇', price: 13990, duration: 210, category: '唇部', group: 'lip', legacy: '輕染潤霧唇 $13,990', description: '提升唇色明亮度與整體氣色，適合想要自然紅潤、減少素顏疲態的人。' },
-            { id: 'restore_lip', name: '還原潤色唇', price: 16990, duration: 240, category: '唇部', group: 'lip', legacy: '還原潤色唇 $16,990', description: '針對唇色暗沉、色階不均做調整，讓唇色回到更柔和乾淨的狀態。' },
-            { id: 'lip_neutralize', name: '唇淡色還原', price: 5990, duration: 150, category: '唇部', group: 'lip', legacy: '唇淡色還原 $5,990', description: '針對偏深、偏冷或暗沉唇色進行淡化規劃，適合作為正式潤唇前的基礎整理。' },
-            { id: 'lash_basic', name: '韓式睫毛管理', price: 1290, duration: 90, category: '眼部', group: 'lash', legacy: '韓式睫毛管理 $1,290', description: '整理原生睫毛毛流與捲翹度，放大眼神清晰度，保留乾淨自然的日常感。' },
-            { id: 'lash_lower', name: '韓式睫毛管理+下睫毛', price: 1790, duration: 120, category: '眼部', group: 'lash', legacy: '韓式睫毛管理+下睫毛 $1,790', description: '上下睫毛同步管理，讓眼型比例更完整，適合想要更精緻但不厚重的眼神效果。' },
-            { id: 'new_chinese_lash', name: '新中式美睫', price: 1590, duration: 180, category: '眼部', group: 'lash', legacy: '新中式美睫 $1,590', description: '不限根數，依眼型、睫毛條件與日常妝感客製化設計；包含下睫毛，若不習慣下睫毛也可選擇不接。' },
-            { id: 'lash_removal_own', name: '本店卸睫', price: 0, duration: 6, category: '眼部', group: 'lash_removal', legacy: '本店卸睫 $0', description: '適合曾於本店嫁接睫毛、需要卸除舊睫毛或重新整理眼部狀態的顧客。' },
-            { id: 'lash_removal_other', name: '他店卸睫', price: 200, duration: 6, category: '眼部', group: 'lash_removal', legacy: '他店卸睫 $200', description: '適合需要卸除他店嫁接睫毛、重新評估原生睫毛狀態或銜接新設計的顧客。' },
+            // 眉部
+            { id: 'misty_brow', name: '粉黛柔霧眉', price: 7990, duration: 180, category: '眉部', group: 'brow', legacy: '粉黛柔霧眉 $7,990', description: '柔霧妝感眉型，依原生眉型、眉骨與五官比例客製設計，適合想要自然乾淨眉型的人。' },
+            { id: 'wild_brow', name: '立體野生眉', price: 9990, duration: 210, category: '眉部', group: 'brow', legacy: '立體野生眉 $9,990', description: '以仿真毛流線條增加眉毛立體度，適合想保留原生感、希望眉毛看起來更有毛流的人。' },
+            { id: 'combo_brow', name: '野生粉黛眉', price: 13990, duration: 240, category: '眉部', group: 'brow', legacy: '野生粉黛眉 $13,990', description: '線條與柔霧結合，兼顧毛流感與整體完整度，適合想要更精緻但不公版的眉型。' },
+            { id: 'brow_removal_single', name: '單次無創淡色', price: 1990, duration: 90, category: '眉部', group: 'brow', legacy: '單次無創淡色 $1,990', legacyAliases: ['單次微創洗眉 $1,990'], description: '針對舊眉色感、範圍或偏色做漸進式淡化；實際是否適合、需要幾次會先依目前舊色評估。' },
+            { id: 'removal_package', name: '無創淡色包套', price: 8990, duration: 90, category: '眉部', group: 'brow', legacy: '無創淡色包套 $8,990', legacyAliases: ['無限包套優惠 $8,990'], description: '適合舊色較深、預估需要多次淡色規劃的人；每次仍會依當下皮膚與舊色狀態安排。' },
+
+            // 唇部
+            { id: 'soft_lip', name: '輕染潤霧唇', price: 13990, duration: 210, category: '唇部', group: 'lip', legacy: '輕染潤霧唇 $13,990', description: '依原生唇色與膚色規劃自然色感，適合想讓素顏氣色更柔和、唇色更均勻的人。' },
+            { id: 'restore_lip', name: '還原潤霧唇', price: 16990, duration: 240, category: '唇部', group: 'lip', legacy: '還原潤霧唇 $16,990', legacyAliases: ['還原潤色唇 $16,990'], description: '針對唇色較深或色感不均做分階段規劃，再依底色調整適合的潤色方向。' },
+            { id: 'lip_neutralize', name: '唇淡色還原', price: 5990, duration: 150, category: '唇部', group: 'lip', legacy: '唇淡色還原 $5,990', description: '針對原生唇色偏深或色感不均做淡化規劃；是否需要淡色會先看照片與實際唇況。' },
+
+            // 眼部｜日式單根
+            { id: 'lash_single_80_100', name: '日式單根 80–100 根', price: 890, duration: 120, category: '眼部', group: 'lash', legacy: '日式單根 80–100 根 $890', description: '清透自然款，適合第一次接睫毛、不想太濃，或希望素顏看起來更有精神的人。' },
+            { id: 'lash_single_120_150', name: '日式單根 120–150 根', price: 1190, duration: 150, category: '眼部', group: 'lash', legacy: '日式單根 120–150 根 $1,190', description: '日常與妝感之間的濃度，適合希望睫毛存在感更明顯、但仍保留乾淨感的人。' },
+            { id: 'lash_single_full', name: '日式單根 接到滿', price: 1390, duration: 180, category: '眼部', group: 'lash', legacy: '日式單根 接到滿 $1,390', description: '依原生睫毛健康度與可嫁接數量接到適合的完整度，不硬追求固定根數。' },
+
+            // 眼部｜新中式 / 睫毛管理
+            { id: 'new_chinese_lash', name: '新中式美睫', price: 1590, duration: 180, category: '眼部', group: 'lash', legacy: '新中式美睫 $1,590', description: '不限根數、含下睫毛，依眼型、原生睫毛與想要的妝感客製設計；不習慣下睫毛也可以不接。' },
+            { id: 'lash_basic', name: '韓式睫毛管理', price: 1290, duration: 90, category: '眼部', group: 'lash', legacy: '韓式睫毛管理 $1,290', description: '整理原生睫毛毛流與捲翹度，適合不想接假睫毛、希望原生睫毛看起來更整齊有精神的人。' },
+            { id: 'lash_lower', name: '韓式睫毛管理＋下睫毛', price: 1790, duration: 120, category: '眼部', group: 'lash', legacy: '韓式睫毛管理＋下睫毛 $1,790', legacyAliases: ['韓式睫毛管理+下睫毛 $1,790'], description: '上、下睫毛一起管理，讓眼型比例更完整；下睫毛為加購 $500。' },
+
+            // 眼部｜卸睫
+            { id: 'lash_removal_own_continue_4w', name: '本店卸睫續作（四週內）', price: 0, duration: 30, category: '眼部', group: 'lash_removal', legacy: '本店卸睫續作（四週內） $0', legacyAliases: ['本店卸睫 $0'], description: '四週內回本店續作美睫，卸除本店原有嫁接睫毛。' },
+            { id: 'lash_removal_own_continue_over4w', name: '本店卸睫續作（四週以上）', price: 200, duration: 30, category: '眼部', group: 'lash_removal', legacy: '本店卸睫續作（四週以上） $200', description: '超過四週回本店續作美睫，卸除本店原有嫁接睫毛。' },
+            { id: 'lash_removal_own_only', name: '本店卸睫不續作', price: 300, duration: 30, category: '眼部', group: 'lash_removal', legacy: '本店卸睫不續作 $300', description: '僅卸除本店嫁接睫毛，本次不續接。' },
+            { id: 'lash_removal_other_continue', name: '他店卸睫續作', price: 400, duration: 30, category: '眼部', group: 'lash_removal', legacy: '他店卸睫續作 $400', legacyAliases: ['他店卸睫 $200'], description: '先卸除他店嫁接睫毛，再於本店重新評估並續作。' },
+            { id: 'lash_removal_other_only', name: '他店卸睫不續作', price: 500, duration: 30, category: '眼部', group: 'lash_removal', legacy: '他店卸睫不續作 $500', description: '僅卸除他店嫁接睫毛，本次不續接。' },
+
+            // 補色 / 回訪
             { id: 'brow_touchup_3m', name: '3 個月內眉毛補色', price: 0, duration: 120, category: '補色回訪', group: 'brow_touchup', conflictsWithGroups: ['brow', 'lip', 'lip_touchup'], legacy: '3 個月內眉毛補色 $0', description: '眉部正式服務後 3 個月內回訪補色，針對留色、眉型細節與局部淡化處做加強。' },
-            { id: 'lip_touchup_3m', name: '3 個月內唇部補色', price: 0, duration: 120, category: '補色回訪', group: 'lip_touchup', conflictsWithGroups: ['brow', 'lip', 'brow_touchup'], legacy: '3 個月內唇部補色 $0', description: '唇部正式服務後 3 個月內回訪補色，針對顏色均勻度、明亮度與局部留色情況做加強。' },
+            { id: 'lip_touchup_3m', name: '3 個月內唇部補色', price: 0, duration: 120, category: '補色回訪', group: 'lip_touchup', conflictsWithGroups: ['brow', 'lip', 'brow_touchup'], legacy: '3 個月內唇部補色 $0', description: '唇部正式服務後 3 個月內回訪補色，依實際留色情況調整均勻度與色感。' },
             { id: 'brow_touchup_after_3m', name: '超過 3 個月眉毛補色', price: null, duration: 120, category: '補色回訪', group: 'brow_touchup', conflictsWithGroups: ['brow', 'lip', 'lip_touchup'], legacy: '超過 3 個月眉毛補色 $半價', priceText: '半價', description: '眉部超過 3 個月後的補色回訪，實際金額依原眉部服務項目半價計算。' },
             { id: 'lip_touchup_after_3m', name: '超過 3 個月唇部補色', price: null, duration: 120, category: '補色回訪', group: 'lip_touchup', conflictsWithGroups: ['brow', 'lip', 'brow_touchup'], legacy: '超過 3 個月唇部補色 $半價', priceText: '半價', description: '唇部超過 3 個月後的補色回訪，實際金額依原唇部服務項目半價計算。' },
-            { id: 'lash_return', name: '包套睫毛回訪', price: 0, duration: 90, category: '補色回訪', group: 'lash_return', legacy: '包套睫毛回訪 $0', description: '包套客回訪使用，用於追蹤睫毛狀態與後續管理調整。' },
-            { id: 'removal_return', name: '包套除色回訪', price: 0, duration: 90, category: '補色回訪', group: 'brow', legacy: '包套除色回訪 $0', description: '除色包套客回訪使用，用於追蹤淡化進度並安排後續次數。' }
+            { id: 'lash_fix_7d', name: '7 日內免費補睫', price: 0, duration: 60, category: '補色回訪', group: 'lash_return', legacy: '7 日內免費補睫 $0', description: '限本店美睫完成後 7 日內，若有需要可預約補睫；實際仍會依睫毛狀況確認。' },
+            { id: 'lash_return_4w', name: '4 週內美睫回訪', price: null, duration: 150, category: '補色回訪', group: 'lash_return', legacy: '4 週內美睫回訪 $9折', priceText: '9 折', description: '本店美睫四週內回訪享 9 折，實際金額依本次選擇款式計算。' },
+            { id: 'removal_return', name: '淡色包套回訪', price: 0, duration: 90, category: '補色回訪', group: 'brow', legacy: '淡色包套回訪 $0', legacyAliases: ['包套除色回訪 $0'], description: '無創淡色包套客回訪使用，用於追蹤淡化進度並安排後續操作。' }
         ];
 
         const locations = [
@@ -674,7 +698,12 @@
         function parseLegacyServiceString(serviceText) {
             if (!serviceText) return [];
             return serviceText.split(' + ').map(item => item.trim()).map(label => {
-                const found = services.find(s => s.legacy === label || `${s.name} ${money(s.price)}` === label || s.name === label);
+                const found = services.find(s =>
+                    s.legacy === label ||
+                    (Array.isArray(s.legacyAliases) && s.legacyAliases.includes(label)) ||
+                    `${s.name} ${money(s.price)}` === label ||
+                    s.name === label
+                );
                 return found ? found.id : null;
             }).filter(Boolean);
         }
@@ -752,11 +781,90 @@
             document.getElementById('timeGrid').appendChild(btn);
         }
 
+        function timeToMinutes(time) {
+            if (!time || !/^\d{2}:\d{2}$/.test(String(time))) return null;
+            const [h, m] = String(time).split(':').map(Number);
+            if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+            return h * 60 + m;
+        }
+
+        function minutesToTime(totalMinutes) {
+            const normalized = ((totalMinutes % 1440) + 1440) % 1440;
+            const h = String(Math.floor(normalized / 60)).padStart(2, '0');
+            const m = String(normalized % 60).padStart(2, '0');
+            return `${h}:${m}`;
+        }
+
+        function rangesOverlap(startA, endA, startB, endB) {
+            // 使用半開區間判斷：兩個區間只在端點相接時可銜接，不算衝突。
+            return startA < endB && endA > startB;
+        }
+
+        // 將後端回傳的不可預約資料轉成「實際占用 + 前後 30 分鐘」區間。
+        // 支援目前的字串時段，也預留物件格式：
+        // { time/start: '11:00', durationMinutes: 180 } 或 { start: '11:00', end: '14:00' }
+        function normalizeBlockedRanges(entries) {
+            const ranges = [];
+            (Array.isArray(entries) ? entries : []).forEach(entry => {
+                if (typeof entry === 'string') {
+                    const start = timeToMinutes(entry);
+                    if (start === null) return;
+                    // 字串代表一個已被後端標為不可預約的半小時格。
+                    ranges.push({ start, end: start + 30, source: 'slot' });
+                    return;
+                }
+
+                if (!entry || typeof entry !== 'object') return;
+                const startText = entry.start || entry.time || entry.startTime;
+                const start = timeToMinutes(startText);
+                if (start === null) return;
+
+                let duration = Number(entry.durationMinutes ?? entry.duration ?? 0);
+                let end = null;
+                if (entry.end || entry.endTime) end = timeToMinutes(entry.end || entry.endTime);
+                if (end === null && Number.isFinite(duration) && duration > 0) end = start + duration;
+                if (end === null) end = start + 30;
+
+                const alreadyBuffered = entry.buffered === true || entry.hasBuffer === true;
+                ranges.push({
+                    start: alreadyBuffered ? start : start - BOOKING_BUFFER_MINUTES,
+                    end: alreadyBuffered ? end : end + BOOKING_BUFFER_MINUTES,
+                    source: 'booking'
+                });
+            });
+            return ranges;
+        }
+
+        function getCandidateBookingRange(time) {
+            const start = timeToMinutes(time);
+            if (start === null) return null;
+            const duration = getSelectedDuration();
+            if (!duration) return { start, end: start };
+            return {
+                start: start - BOOKING_BUFFER_MINUTES,
+                end: start + duration + BOOKING_BUFFER_MINUTES
+            };
+        }
+
         function isTimeUnavailable(time) {
             const date = document.getElementById('inputDate')?.value || state.date;
             const location = state.location;
             const dateBlocked = unavailableSlots[date]?.[location] || [];
-            return blockedRegularSlots.includes(time) || dateBlocked.includes(time);
+
+            if (blockedRegularSlots.includes(time)) return true;
+
+            const candidate = getCandidateBookingRange(time);
+            if (!candidate) return true;
+
+            // 固定不開放時段也要檢查「所選服務的完整操作時間」是否跨到該時段。
+            const regularRanges = blockedRegularSlots.map(slot => {
+                const start = timeToMinutes(slot);
+                return { start, end: start + 30 };
+            }).filter(r => r.start !== null);
+            if (regularRanges.some(r => rangesOverlap(candidate.start, candidate.end, r.start, r.end))) return true;
+
+            const blockedRanges = normalizeBlockedRanges(dateBlocked);
+            return blockedRanges.some(r => rangesOverlap(candidate.start, candidate.end, r.start, r.end));
         }
 
         function setSlotSyncStatus(text, type = '') {
@@ -774,7 +882,7 @@
         function setUnavailableSlots(date, location, slots) {
             if (!date || !location) return;
             if (!unavailableSlots[date]) unavailableSlots[date] = {};
-            unavailableSlots[date][location] = Array.isArray(slots) ? slots.map(String) : [];
+            unavailableSlots[date][location] = Array.isArray(slots) ? slots : [];
         }
 
         function loadUnavailableSlots() {
@@ -822,7 +930,7 @@
                         renderTimeSlots();
                         renderConfirm();
                         setSlotSyncStatus(
-                            slots.length ? '已更新可預約時段，已滿時段已標示為不可預約。' : '已更新可預約時段。',
+                            slots.length ? '已更新可預約時段；系統已依操作時間與前後 30 分鐘緩衝排除衝突時段。' : '已更新可預約時段。',
                             'success'
                         );
                     } else {
@@ -845,7 +953,11 @@
                     }
 
                     if (response && response.status === 'success') {
-                        const slots = response.unavailableSlots || [];
+                        // 若後端有回傳含 start / durationMinutes 的 bookings，優先使用；
+                        // 否則沿用 unavailableSlots（後端需已展開成每 30 分鐘不可預約格）。
+                        const slots = (Array.isArray(response.bookings) && response.bookings.length)
+                            ? response.bookings
+                            : (response.unavailableSlots || []);
                         setUnavailableSlots(date, location, slots);
                         finish(slots, 'success');
                     } else {
@@ -855,7 +967,7 @@
                 };
 
                 script = document.createElement('script');
-                script.src = `${GOOGLE_SCRIPT_URL}?action=slots&date=${encodeURIComponent(date)}&location=${encodeURIComponent(location)}&callback=${encodeURIComponent(callbackName)}&t=${Date.now()}`;
+                script.src = `${GOOGLE_SCRIPT_URL}?action=slots&date=${encodeURIComponent(date)}&location=${encodeURIComponent(location)}&durationMinutes=${encodeURIComponent(getSelectedDuration())}&bufferMinutes=${BOOKING_BUFFER_MINUTES}&callback=${encodeURIComponent(callbackName)}&t=${Date.now()}`;
                 script.onerror = () => {
                     console.warn('不可預約時段 API 載入失敗');
                     finish([], 'error');
@@ -886,7 +998,7 @@
                 if (status) {
                     if (state.slotsLoading) status.textContent = '同步中';
                     else if (state.slotsSyncState === 'error') status.textContent = '請稍後';
-                    else status.textContent = unavailable ? '不可預約' : '可預約';
+                    else status.textContent = unavailable ? '時段衝突' : '可預約';
                 }
             });
         }
@@ -942,6 +1054,8 @@
             }
             renderServices();
             updateSelectedSummary();
+            ensureSelectedTimeIsAvailable();
+            renderTimeSlots();
             renderConfirm();
         }
 
@@ -1229,6 +1343,9 @@
                 userId,
                 totalAmount: total === null ? '需確認' : total,
                 durationMinutes: duration,
+                bufferMinutes: BOOKING_BUFFER_MINUTES,
+                blockedStart: minutesToTime(timeToMinutes(time) - BOOKING_BUFFER_MINUTES),
+                blockedEnd: minutesToTime(timeToMinutes(time) + duration + BOOKING_BUFFER_MINUTES),
                 mode: 'create',
                 bookingId: state.currentParams.bookingId || '',
                 originalTime: state.currentParams.time || '',
