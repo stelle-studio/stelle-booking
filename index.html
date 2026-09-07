@@ -856,13 +856,10 @@
             const candidate = getCandidateBookingRange(time);
             if (!candidate) return true;
 
-            // 固定不開放時段也要檢查「所選服務的完整操作時間」是否跨到該時段。
-            const regularRanges = blockedRegularSlots.map(slot => {
-                const start = timeToMinutes(slot);
-                return { start, end: start + 30 };
-            }).filter(r => r.start !== null);
-            if (regularRanges.some(r => rangesOverlap(candidate.start, candidate.end, r.start, r.end))) return true;
-
+            // 例行封鎖時段只限制「該開始時間本身」不能被選取。
+            // 例如 12:00、12:30 不可作為預約開始時間，但 10:00 開始的 3 小時服務
+            // 不會因為跨過 12:00 / 12:30 就被整段判定衝突。
+            // 真正的跨時段衝突只依「既有預約 + 前後 30 分鐘緩衝」判斷。
             const blockedRanges = normalizeBlockedRanges(dateBlocked);
             return blockedRanges.some(r => rangesOverlap(candidate.start, candidate.end, r.start, r.end));
         }
