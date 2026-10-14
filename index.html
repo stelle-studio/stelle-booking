@@ -61,7 +61,7 @@
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-            margin-bottom: 10px;
+            margin-bottom: 0;
         }
 
         .brand-title {
@@ -81,23 +81,11 @@
             color: var(--text-light);
             font-weight: 500;
             margin: 0;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-        }
-
-        .mini-badge {
-            font-size: 11px;
-            color: var(--deep-brown);
-            background: #F4ECE7;
-            border: 1px solid #E6D7CF;
-            padding: 8px 12px;
-            border-radius: 999px;
-            white-space: nowrap;
-            line-height: 1.4;
-            max-width: 230px;
-            text-align: center;
-            box-shadow: 0 6px 14px rgba(93, 64, 55, 0.06);
+            letter-spacing: 1px;
+            line-height: 1.7;
+            text-align: right;
             flex: 0 0 auto;
+            white-space: nowrap;
         }
 
         #loading-status {
@@ -345,7 +333,7 @@
         .summary-label { color: var(--muted); font-size: 12px; margin-bottom: 4px; }
         .summary-value { color: var(--deep-brown); font-size: 16px; font-weight: 700; }
 
-        .location-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .location-tabs { display: grid; grid-template-columns: 1fr; gap: 10px; }
         .location-tab { border-radius: 15px; padding: 13px 10px; text-align: center; font-size: 14px; font-weight: 600; }
         .location-tab .address { display: block; margin-top: 3px; font-size: 11px; color: var(--muted); font-weight: 400; }
         .location-tab.selected { background: var(--deep-brown); color: #fff; border-color: var(--deep-brown); }
@@ -426,9 +414,8 @@
         @media (max-width: 430px) {
             body { padding: 10px; }
             .container { padding: 24px 16px; border-radius: 22px; }
-            .brand-top { align-items: flex-start; flex-direction: column; gap: 12px; margin-bottom: 12px; }
-            .brand-title { font-size: 36px; }
-            .mini-badge { max-width: 100%; white-space: normal; text-align: left; }
+            .brand-top { gap: 10px; }
+            .brand-title { font-size: clamp(26px, 8vw, 34px); }
             input[type="date"] { font-size: 16px; padding-left: 10px; padding-right: 10px; }
             .time-grid { grid-template-columns: repeat(2, 1fr); }
             .location-tabs { grid-template-columns: 1fr; }
@@ -440,9 +427,8 @@
         <header class="brand-header">
             <div class="brand-top">
                 <h1 class="brand-title">Stelle studio</h1>
-                <div class="mini-badge">設計系出身｜新中式美睫 × 骨相眉</div>
+                <p class="sub-title">蒔黛美學<br>線上預約</p>
             </div>
-            <p class="sub-title">蒔黛美學 線上預約</p>
         </header>
 
         <div id="loading-status">LINE 系統連線中...</div>
@@ -643,8 +629,8 @@
         ];
 
         const locations = [
-            { id: 'taoyuan', name: '桃園店', address: '桃園區南海街', legacy: '桃園店 (桃園區南海街)' },
-            { id: 'zhongli', name: '中壢店', address: '中壢區後寮一路', legacy: '中壢店 (中壢區後寮一路)' }
+            { id: 'zhongli', name: '中壢店', address: '中壢區後寮一路', legacy: '中壢店 (中壢區後寮一路)' },
+            { id: 'taoyuan', name: '桃園店', address: '桃園區南海街', legacy: '桃園店 (桃園區南海街)' }
         ];
 
         const state = {
