@@ -643,7 +643,8 @@
         services.push(
             { id: 'lash_single_lower_addon', name: '日式單根加購下睫毛', price: 300, duration: 30, category: '眼部', group: 'lash_addon', legacy: '日式單根加購下睫毛 $300' },
             { id: 'lash_korean_lower_addon', name: '韓式睫毛管理加購下睫毛', price: 500, duration: 30, category: '眼部', group: 'lash_addon', legacy: '韓式睫毛管理加購下睫毛 $500' },
-            { id: 'lash_light_curing', name: '加購光固化', price: 300, duration: 0, category: '眼部', group: 'lash_addon', legacy: '加購光固化 $300', description: '維持度更好、完全不熏眼、更抗油汙。' },
+            { id: 'lash_light_curing', name: '免費升級光固化', price: 0, duration: 0, category: '眼部', group: 'lash_included', legacy: '免費升級光固化 $0' },
+            { id: 'lash_light_curing_paid_legacy', name: '加購光固化（原預約）', price: 300, duration: 0, category: '眼部', group: 'lash_addon', legacy: '加購光固化 $300', legacyAliases: ['加購光固化', '升級光固化 +$300'] },
             { id: 'lash_return_discount', name: '本店四週內回訪（主項目九折）', price: 0, duration: 0, category: '眼部', group: 'lash_discount', legacy: '本店四週內回訪（主項目九折）' }
         );
 
@@ -1067,7 +1068,7 @@
             const eye = state.eye;
             if (eye.main) state.selectedServices.push(eye.main);
             if (eye.main && eye.lower === true) state.selectedServices.push(eye.type === 'single' ? 'lash_single_lower_addon' : 'lash_korean_lower_addon');
-            if (eye.main && ['single', 'chinese'].includes(eye.type) && eye.curing === true) state.selectedServices.push('lash_light_curing');
+            if (eye.main && ['single', 'chinese'].includes(eye.type) ) state.selectedServices.push('lash_light_curing');
             if (eye.main && eye.returning === true) state.selectedServices.push('lash_return_discount');
             if (eye.removal && eye.removal !== 'none') state.selectedServices.push(eye.removal);
         }
@@ -1077,7 +1078,7 @@
             if (field === 'type') {
                 // Switching style clears dependent choices, avoiding hidden charges.
                 state.eye = { type: value, main: value === 'chinese' ? 'new_chinese_lash' : value === 'korean' ? 'lash_basic' : null,
-                    lower: value === 'chinese' || value === 'only' ? false : null, curing: value === 'single' || value === 'chinese' ? null : false, returning: null, removal: null };
+                    lower: value === 'chinese' || value === 'only' ? false : null, curing: value === 'single' || value === 'chinese', returning: null, removal: null };
             } else {
                 state.eye[field] = value;
                 if (field === 'returning' && state.eye.removal && !eyeRemovalChoices().includes(state.eye.removal)) state.eye.removal = null;
@@ -1095,7 +1096,6 @@
             }
             if (!eye.main) { alert('請選擇日式單根根數'); return false; }
             if (eye.lower === null) { alert('請選擇是否加購下睫毛'); return false; }
-            if (['single', 'chinese'].includes(eye.type) && eye.curing === null) { alert('請選擇是否加購光固化'); return false; }
             if (eye.returning === null) { alert('請選擇是否為本店四週內回訪'); return false; }
             if (!eye.removal) { alert('請選擇是否需要卸睫'); return false; }
             if (!eyeRemovalChoices().includes(eye.removal)) { alert('請重新確認卸睫條件'); return false; }
@@ -1161,15 +1161,13 @@
                         { value: true, label: '加購下睫毛 +' + money(eye.type === 'single' ? 300 : 500) }], 'lower', eye.lower);
                 } else note('新中式美睫已包含下睫毛，不另收加購費用。');
                 if (eye.type === 'single' || eye.type === 'chinese') note('包含七天內免費回補睫毛。');
-                if (eye.lower !== null && ['single', 'chinese'].includes(eye.type)) {
-                    group('是否加購光固化？', [{ value: false, label: '不加購' },
-                        { value: true, label: '加購光固化 +$300' }], 'curing', eye.curing);
-                    note('維持度更好、完全不熏眼、更抗油汙。');
+                if (['single', 'chinese'].includes(eye.type)) {
+                    note('✓ 免費升級光固化｜已包含於本次服務，不需另外勾選或加價。');
                 }
-                if (eye.lower !== null && eye.curing !== null) {
+                if (eye.lower !== null) {
                     group('是否為本店美睫四週內回訪？', [{ value: false, label: '否' },
                         { value: true, label: '是｜美睫主項目九折' }], 'returning', eye.returning);
-                    note('九折限美睫主項目；加購下睫毛、光固化與卸睫另計。');
+                    note('九折限美睫主項目；下睫毛加購與卸睫依所選條件另計。');
                     if (eye.returning !== null) {
                         if (eye.returning) note('本店四週內回訪，如需卸除本店睫毛可選免費卸睫。');
                         group('是否需要卸睫？', eyeRemovalChoices().map(id => {
@@ -1190,7 +1188,7 @@
                 if ((service.group === 'lash_return' && sel.category === '眼部') || (sel.group === 'lash_return' && service.category === '眼部')) return true;
                 const serviceConflicts = service.conflictsWithGroups || [];
                 const selectedConflicts = sel.conflictsWithGroups || [];
-                return sel.group === service.group || serviceConflicts.includes(sel.group) || selectedConflicts.includes(service.group);
+                return serviceConflicts.includes(sel.group) || selectedConflicts.includes(service.group);
             });
         }
 
@@ -1202,6 +1200,8 @@
                 state.selectedServices = state.selectedServices.filter(id => id !== serviceId);
             } else {
                 if (isServiceDisabled(service)) return;
+                // A new choice replaces the previous style within the same service group.
+                state.selectedServices = state.selectedServices.filter(id => services.find(s => s.id === id)?.group !== service.group);
                 state.selectedServices.push(serviceId);
             }
             if (state.selectedServices.length && !state.openCategory) {
@@ -1222,10 +1222,10 @@
             container.innerHTML = '';
 
             serviceCategories.forEach(category => {
-                const items = services.filter(s => s.category === category.key && s.id !== 'lash_return_4w');
+                const items = services.filter(s => s.category === category.key && s.id !== 'lash_return_4w' && s.id !== 'lash_light_curing_paid_legacy');
                 if (!items.length) return;
 
-                const selectedInCategory = items.filter(s => state.selectedServices.includes(s.id)).length;
+                const selectedInCategory = items.filter(s => !['lash_return_discount', 'lash_light_curing'].includes(s.id) && state.selectedServices.includes(s.id)).length;
                 const toggle = document.createElement('button');
                 toggle.type = 'button';
                 toggle.className = 'service-category-toggle';
@@ -1268,7 +1268,26 @@
                 }
                 const list = document.createElement('div');
                 list.className = 'service-list';
-                items.forEach(service => {
+                const sections = category.key === '眉部' ? [
+                    { title: '只想整理眉型', ids: ['brow_grooming'] },
+                    { title: '想做眉型定妝｜選擇喜歡的效果', ids: ['misty_brow', 'wild_brow', 'combo_brow'] },
+                    { title: '想調整舊眉色｜選擇淡色方案', ids: ['brow_removal_single', 'removal_package'] }
+                ] : category.key === '唇部' ? [
+                    { title: '想增加唇色與氣色', ids: ['soft_lip', 'restore_lip'] },
+                    { title: '想先淡化唇色', ids: ['lip_neutralize'] }
+                ] : [
+                    { title: '眉毛補色｜距離上次操作多久？', ids: ['brow_touchup_3m', 'brow_touchup_after_3m'] },
+                    { title: '唇部補色｜距離上次操作多久？', ids: ['lip_touchup_3m', 'lip_touchup_after_3m'] },
+                    { title: '美睫售後', ids: ['lash_fix_7d'] },
+                    { title: '已購買淡色包套', ids: ['removal_return'] }
+                ];
+                const hint = document.createElement('p'); hint.className = 'eye-note';
+                hint.textContent = '依照需求選擇服務；點選同類其他款式可直接切換，再點已選項目可取消。';
+                container.appendChild(hint);
+                sections.forEach(section => {
+                    const heading = document.createElement('p'); heading.className = 'eye-heading';
+                    heading.textContent = section.title; list.appendChild(heading);
+                    section.ids.map(id => items.find(item => item.id === id)).filter(Boolean).forEach(service => {
                     const selected = state.selectedServices.includes(service.id);
                     const disabled = isServiceDisabled(service);
                     const card = document.createElement('button');
@@ -1277,6 +1296,8 @@
                     if (selected) card.classList.add('selected');
                     if (disabled) card.classList.add('disabled');
                     if (state.isEditMode) card.classList.add('locked');
+                    card.disabled = disabled || state.isEditMode;
+                    card.setAttribute('aria-pressed', String(selected));
                     card.onclick = () => toggleService(service.id);
                     card.innerHTML = `
                         <div>
@@ -1289,13 +1310,14 @@
                         </div>
                     `;
                     list.appendChild(card);
+                    });
                 });
                 container.appendChild(list);
             });
         }
 
         function updateSelectedSummary() {
-            const count = state.selectedServices.filter(id => id !== 'lash_return_discount').length;
+            const count = state.selectedServices.filter(id => !['lash_return_discount', 'lash_light_curing'].includes(id)).length;
             const total = getSelectedTotal();
             document.getElementById('selectedCount').textContent = `${count} 項`;
             document.getElementById('selectedTotal').textContent = total === null ? '需現場確認' : money(total);
